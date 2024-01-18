@@ -4,7 +4,7 @@ class HashTable {
         int s=0;
         boolean loaded = false;
         while (!loaded) {
-            if (slot[s] == 0) {
+            if (slot[s] == -1) {
                 slot[s] = k;
                 loaded = true;
             }
@@ -19,7 +19,7 @@ class HashTable {
         boolean found = false;
         while (!found && s<3) {
             if (slot[s] == k) {
-                slot[s] = 0;
+                slot[s] = -1;
                 found = true;
             }
             else {
@@ -47,4 +47,5 @@ class HashTable {
         System.out.println("The key does not exist");
         return 0;
     }
+
 }
