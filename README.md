@@ -1,1 +1,1 @@
-Main.java = rehashing
+Main.java = rehashing + quadratic probing
