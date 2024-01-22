@@ -1,88 +1,24 @@
 import java.io.*;
 import java.util.*;
 public class Main {
-    public int hashfunc(int k, int b) {
-        return k%b;
-    }                                                                //Hash Function, h(x)
-    public boolean put(int k, int b, int slot, int[][] h) {         //insert key into hashtable function
-        boolean loaded = false;
-        int s = 0;
-        while (!loaded && s<slot) if (h[b][s] == -1 && h[b][s] != k) {
-            h[b][s] = k;
-            loaded = true;
-        } else s++;
-        return loaded;
-    }
-    public int get(int k, int b, int slot, int[][] h) {             //search/retrieve function
-        int s;
-        int buc;
-        for (buc=0; buc<b; buc++) {
-            for (s=0; s<slot; s++) {
-                if (h[buc][s] == k) {
-                    System.out.println("Key found: " + h[buc][s]);
-                    return h[buc][s];
-                }
-            }
-        }
-        System.out.println("Key not found");
-        return -1;
-    }
-    public int rehashfunc(int k, int b, int count) {            //rehashing function
-        return (k%b + count*(prime(b)-(k%prime(b))));
-    }
-    public int prime(int b) {                                   //Finding prime number for rehashing
-        int N = b-1;
-        int mod;
-        boolean primefound = false;
-        while (!primefound) {
-            for (int n=2; n<N; n++) {
-                mod = N % n;
-                if (mod == 0) {
-                    primefound = false;
-                    break;
-                } else {
-                    primefound = true;
-                }
-            }
-            if (!primefound)
-                N--;
-        }
-        return N;
-    }
-    public int quadraticprobing(int k, int b, int count) {       //Quadratic Probing hash function
-        return (hashfunc(k, b) + count^2);
-    }
-    public int linearprobing(int k, int b, int count) {
-        return (hashfunc(k, b)+count);
-    }
-    public int randomprobing(int k, int b) {
-        Random rand = new Random();
-        return (hashfunc(k, b) + rand.nextInt(1, b-1));
-    }
-    public static void hashprint(int[][] h, int b, int s) {     //print the hash table
-        for (int i=0; i<b; i++) {
-            for (int j=0; j<s; j++) {
-                System.out.printf("%d  ",h[i][j]);
-            }
-            System.out.println("");
-        }
-    }
     public static void main(String[] args) throws IOException{
-        Main hash = new Main();                                 //hash ADT object
-        boolean load;                                           //Used for rehashing purpose, false = rehash
+        HashTable hash = new HashTable();                       //hash table ADT object
+        boolean load;                                           //Used for collision detection purpose, false = collision handling starts
         int bucketnum = 100;                                    //bucket size
-        int slot = 150;                                         //slot size
+        int slot = 100;                                         //slot size
         int datanum=0;
-        int bucket, probing_method;                     //key's bucket + chosen collision handling method
+        int bucket, probing_method;                             //key's bucket + chosen collision handling method
         int[][] hashtable = new int[bucketnum][slot];           //hashtable 2D array
         for (int[] row: hashtable)                              //Fill 2D hashtable array with -1, -1 = NULL
             Arrays.fill(row, -1);
-        File keys = new File("keyset1");                  //Create a file for our text file(data file)
+        File keys = new File("keyset4");                  //Create a file for our text file(data file)
         Scanner fr = new Scanner(keys);                         //Create scanner to scan our text file
         Scanner probechoose = new Scanner(System.in);           //Choose collision handling method
         Scanner retrieve = new Scanner(System.in);              //user inputs to retrieve a key
         System.out.println("Choose the collision handling method:"); //1 for rehashing, 2 for quadratic probing, 3 for random probing, default is linear probing
         probing_method = probechoose.nextInt();
+        /* START INSERTING PROCESS
+        -------------------------------------------------------------------------------------------------------------------*/
         long start_in = System.nanoTime();                       //Timing for inserting starts
         while (fr.hasNextLine()) {                               //When there is string in a line go through the loop
             datanum++;
@@ -95,6 +31,11 @@ public class Main {
             switch (probing_method) {
                 case 1 -> {
                     while (!load) {
+                        if (c>100) {                                                        //Insertion limited to just 100 iteration of rehashing
+                            System.out.println("Insertion failed");                         //Iteration exceeding 100 will fail to put the key into hash table
+                            break;
+                        }
+                        System.out.println("Rehashing ongoing");
                         bucket = hash.rehashfunc(dataint, bucketnum, c) % bucketnum;
                         load = hash.put(dataint, bucket, slot, hashtable);
                         c++;
@@ -102,6 +43,11 @@ public class Main {
                 }
                 case 2 -> {
                     while (!load) {
+                        if (c>100) {                                                        //Insertion limited to just 100 iteration of quadratic probing
+                            System.out.println("Insertion failed");                         //Iteration exceeding 100 will fail to put the key into hash table
+                            break;
+                        }
+                        System.out.println("Quadratic probing ongoing");
                         bucket = hash.quadraticprobing(dataint, bucketnum, c) % bucketnum;
                         load = hash.put(dataint, bucket, slot, hashtable);
                         c++;
@@ -109,12 +55,14 @@ public class Main {
                 }
                 case 3 -> {
                     while (!load) {
+                        System.out.println("Random probing ongoing");
                         bucket = hash.randomprobing(dataint, bucketnum) % bucketnum;
                         load = hash.put(dataint, bucket, slot, hashtable);
                     }
                 }
                 default -> {
                     while (!load) {
+                        System.out.println("Linear probing ongoing");
                         bucket = hash.linearprobing(dataint, bucketnum, c) % bucketnum;
                         load = hash.put(dataint, bucket, slot, hashtable);
                         c++;
@@ -123,17 +71,24 @@ public class Main {
             }
         }
         long end_in = System.nanoTime();                                                    //Timing for inserting ends
-        hashprint(hashtable, bucketnum, slot);
-        //START SEARCHING ANALYSIS
-        int[] search = new int[datanum];                                                    //Array for keys to be searched
+        hash.hashprint(hashtable, bucketnum, slot);
+        /*START SEARCHING ANALYSIS
+        -----------------------------------------------------------------------------------------------------------------------*/
+        int[] search = new int[datanum];                                                            //Array for keys to be searched
         System.out.println("Choose the keys you want to search: ");
-        for (int numsearch=0; numsearch<datanum-1; numsearch++)
-             search[numsearch] = retrieve.nextInt();                                        //User input keys to be searched
-        long start = System.nanoTime();                                                     //Timing for searching starts
-        for (int size=0; size<datanum-1; size++) {                                          //Searching for keys
-            hash.get(search[size], bucketnum, slot, hashtable);
+        for (int numsearch=0; numsearch<datanum; numsearch++) {
+            search[numsearch] = retrieve.nextInt();                                                 //User input keys to be searched
         }
-        long end = System.nanoTime();                                                       //Timing for searching ends
+        long start = System.nanoTime();                                                             //Timing for searching starts
+        for (int size=0; size<datanum; size++) {                                                    //Searching for keys
+            switch (probing_method) {
+                case 1 -> hash.getrehash(search[size], bucketnum, slot, hashtable);
+                case 2 -> hash.getquadratic(search[size], bucketnum, slot, hashtable);
+                case 3 -> hash.getrandom(search[size], bucketnum, slot, hashtable);
+                default -> hash.get(search[size], bucketnum, slot, hashtable);
+            }
+        }
+        long end = System.nanoTime();                                                                //Timing for searching ends
         System.out.println("Time take to insert " + datanum + " keys: " +(end_in - start_in));       //Time taken in ns
         System.out.println("Time taken to search " + datanum + " keys: " + (end-start));             //Time taken in ns
         probechoose.close();
