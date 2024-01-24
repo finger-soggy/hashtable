@@ -6,12 +6,12 @@ public class Main {
         boolean load;                                           //Used for collision detection purpose, false = collision handling starts
         int bucketnum = 100;                                    //bucket size
         int slot = 100;                                         //slot size
-        int datanum=0;
+        int datanum=0, numprobe=0, failed=0;
         int bucket, probing_method;                             //key's bucket + chosen collision handling method
         int[][] hashtable = new int[bucketnum][slot];           //hashtable 2D array
         for (int[] row: hashtable)                              //Fill 2D hashtable array with -1, -1 = NULL
             Arrays.fill(row, -1);
-        File keys = new File("keyset4");                  //Create a file for our text file(data file)
+        File keys = new File("keyset2");                  //Create a file for our text file(data file)
         Scanner fr = new Scanner(keys);                         //Create scanner to scan our text file
         Scanner probechoose = new Scanner(System.in);           //Choose collision handling method
         Scanner retrieve = new Scanner(System.in);              //user inputs to retrieve a key
@@ -28,10 +28,12 @@ public class Main {
             bucket = hash.hashfunc(dataint, bucketnum);          //Find the bucket of said integer(key)
             load = hash.put(dataint, bucket, slot, hashtable);   //insert into hash table, return false if the slots of specific bucket is full
             int c=1;                                             //For rehashing
+            if (!load) numprobe++;                               //Counting number of times collision happen
             switch (probing_method) {
                 case 1 -> {
                     while (!load) {
                         if (c>100) {                                                        //Insertion limited to just 100 iteration of rehashing
+                            failed++;                                                       //Number of failed insertion
                             System.out.println("Insertion failed");                         //Iteration exceeding 100 will fail to put the key into hash table
                             break;
                         }
@@ -44,6 +46,7 @@ public class Main {
                 case 2 -> {
                     while (!load) {
                         if (c>100) {                                                        //Insertion limited to just 100 iteration of quadratic probing
+                            failed++;                                                       //Number of failed insertion
                             System.out.println("Insertion failed");                         //Iteration exceeding 100 will fail to put the key into hash table
                             break;
                         }
@@ -91,6 +94,8 @@ public class Main {
         long end = System.nanoTime();                                                                //Timing for searching ends
         System.out.println("Time take to insert " + datanum + " keys: " +(end_in - start_in));       //Time taken in ns
         System.out.println("Time taken to search " + datanum + " keys: " + (end-start));             //Time taken in ns
+        System.out.println("Number of keys that faced collision: " + numprobe);
+        System.out.println("Number of keys not inserted into the hash table: " + failed);
         probechoose.close();
         fr.close();
         retrieve.close();
